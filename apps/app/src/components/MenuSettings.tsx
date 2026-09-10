@@ -3,6 +3,7 @@ import type { Product } from "@qesuite/shared";
 import { SetupForm } from "./ActionSheet";
 import { Icon } from "./Icon";
 import { formatMoney } from "../lib/metrics";
+import { CategoryAccordion } from "./CategoryAccordion";
 
 export function MenuSettings({ products, hasBusiness, onSetup, onSeed }: {
   products: Product[];
@@ -16,11 +17,11 @@ export function MenuSettings({ products, hasBusiness, onSetup, onSeed }: {
   const [seeding, setSeeding] = useState(false);
   const [seedMessage, setSeedMessage] = useState("");
   const filtered = products.filter((product) => product.name.toLocaleLowerCase().includes(search.trim().toLocaleLowerCase()));
-  const grouped = filtered.reduce<Array<{ category: string; products: Product[] }>>((groups, product) => {
+  const grouped = filtered.reduce<Array<{ category: string; items: Product[] }>>((groups, product) => {
     const category = product.category || "Menu";
     const group = groups.find((item) => item.category === category);
-    if (group) group.products.push(product);
-    else groups.push({ category, products: [product] });
+    if (group) group.items.push(product);
+    else groups.push({ category, items: [product] });
     return groups;
   }, []);
 
@@ -45,7 +46,7 @@ export function MenuSettings({ products, hasBusiness, onSetup, onSeed }: {
       {seedMessage && <p className="menu-saved" role="status">{seedMessage}</p>}
       <label className="field-label" htmlFor="menu-search">Find a menu item</label>
       <input id="menu-search" className="text-input" type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search by name…" />
-      <div className="menu-items">{grouped.map((group) => <section className="menu-category" key={group.category}><h3>{group.category}</h3>{group.products.map((product) => <div className="menu-item" key={product.id}><div><strong>{product.name}</strong><small>Sold by {product.unit === "kg" ? "kg" : product.unit}</small></div><strong>{formatMoney(product.price)}</strong></div>)}</section>)}</div>
+      <CategoryAccordion className="menu-items" groups={grouped} itemKey={(product) => product.id} renderItem={(product) => <div className="menu-item"><div><strong>{product.name}</strong><small>Sold by {product.unit === "kg" ? "kg" : product.unit}</small></div><strong>{formatMoney(product.price)}</strong></div>} />
       {filtered.length === 0 && <p className="empty-state">{products.length ? "No matching menu items." : "No menu items yet. Add your first item above."}</p>}
     </>}
   </>;

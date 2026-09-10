@@ -124,6 +124,20 @@ export default {
       }
     }
 
+    if (url.pathname === "/api/business" && request.method === "PATCH") {
+      const payload = await request.json().catch(() => null) as Record<string, unknown> | null;
+      if (!payload || typeof payload.name !== "string" || !payload.name.trim() || payload.name.length > 120 || (payload.tagline != null && (typeof payload.tagline !== "string" || payload.tagline.length > 160))) {
+        return json({ error: "Enter a valid business name." }, { status: 400 });
+      }
+      try {
+        const result = await env.DB.prepare("UPDATE business_profile SET name = ?, tagline = ? WHERE singleton = 1 RETURNING id, name, tagline").bind(payload.name.trim(), typeof payload.tagline === "string" ? payload.tagline.trim() : "").first<BusinessProfile>();
+        return result ? json({ business: result }) : json({ error: "Business profile not found." }, { status: 404 });
+      } catch (error) {
+        console.error("Business profile update failed", error);
+        return json({ error: "Unable to update the business profile." }, { status: 503 });
+      }
+    }
+
     if ((url.pathname === "/api/business" || url.pathname === "/api/products") && request.method === "POST") {
       const payload = await request.json().catch(() => null) as Record<string, unknown> | null;
       if (!payload || typeof payload.name !== "string" || !payload.name.trim() || payload.name.length > 120 || typeof payload.id !== "string" || !/^[0-9a-f-]{36}$/i.test(payload.id)) {
