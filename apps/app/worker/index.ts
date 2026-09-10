@@ -138,6 +138,24 @@ export default {
       }
     }
 
+    if (url.pathname.startsWith("/api/products/") && request.method === "PATCH") {
+      const productId = decodeURIComponent(url.pathname.slice("/api/products/".length));
+      const payload = await request.json().catch(() => null) as Record<string, unknown> | null;
+      if (!productId || !payload || typeof payload.priceMinor !== "number" || !Number.isSafeInteger(payload.priceMinor) || payload.priceMinor < 0) {
+        return json({ error: "Enter a valid non-negative price." }, { status: 400 });
+      }
+      try {
+        const business = await env.DB.prepare("SELECT id FROM business_profile WHERE singleton = 1").first<{ id: string }>();
+        if (!business) return json({ error: "Set up your business first." }, { status: 409 });
+        const product = await env.DB.prepare("UPDATE products SET price_minor = ? WHERE id = ? AND business_id = ? AND active = 1 RETURNING id, name, price_minor / 100.0 AS price, unit, category, active").bind(payload.priceMinor, productId, business.id).first<Record<string, unknown>>();
+        if (!product) return json({ error: "Menu item not found." }, { status: 404 });
+        return json({ product: { ...product, active: Boolean(product.active) } });
+      } catch (error) {
+        console.error("Menu item price update failed", error);
+        return json({ error: "Unable to update the menu item price." }, { status: 503 });
+      }
+    }
+
     if ((url.pathname === "/api/business" || url.pathname === "/api/products") && request.method === "POST") {
       const payload = await request.json().catch(() => null) as Record<string, unknown> | null;
       if (!payload || typeof payload.name !== "string" || !payload.name.trim() || payload.name.length > 120 || typeof payload.id !== "string" || !/^[0-9a-f-]{36}$/i.test(payload.id)) {

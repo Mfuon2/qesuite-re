@@ -256,6 +256,14 @@ export async function updateBusinessProfile(name: string, tagline = ""): Promise
   await pullDashboard();
 }
 
+export async function updateProductPrice(productId: string, priceMinor: number): Promise<void> {
+  if (!navigator.onLine) throw new Error("Connect to the internet to update a menu item price.");
+  const response = await fetch(`/api/products/${encodeURIComponent(productId)}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ priceMinor }) });
+  const payload = await response.json().catch(() => ({})) as { error?: string };
+  if (!response.ok) throw new Error(payload.error || "Unable to update the menu item price. Please retry.");
+  await pullDashboard();
+}
+
 export async function seedRestaurantMenu(): Promise<void> {
   if (!navigator.onLine) throw new Error("Connect to the internet to add the restaurant menu.");
   const response = await fetch("/api/products/seed", { method: "POST" });

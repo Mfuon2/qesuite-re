@@ -21,7 +21,7 @@ function setup() {
     };
   }
   const binding = { prepare, batch: async (statements: ReturnType<typeof prepare>[]) => Promise.all(statements.map(statement => statement.sql.trim().startsWith("SELECT") ? statement.all() : statement.execute())) };
-  const request = (path: string, body?: unknown) => worker.fetch(new Request(`https://test.invalid${path}`, body ? { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) } : undefined), { DB: binding as unknown as D1Database, APP_ENV: "development" }, {} as ExecutionContext);
+  const request = (path: string, body?: unknown, method = body === undefined ? "GET" : "POST") => worker.fetch(new Request(`https://test.invalid${path}`, body === undefined ? { method } : { method, headers: { "content-type": "application/json" }, body: JSON.stringify(body) }), { DB: binding as unknown as D1Database, APP_ENV: "development" }, {} as ExecutionContext);
   return { db, request };
 }
 
@@ -124,4 +124,16 @@ test("restaurant menu seed adds the categorized menu once, including packaging a
   expect(db.query("SELECT price_minor AS priceMinor, category, unit FROM products WHERE name = 'Pilau Mbuzi'").get()).toEqual({ priceMinor: 230000, category: "Pre-Order Menu", unit: "kg" });
   expect((await request("/api/products/seed", {})).status).toBe(200);
   expect(db.query("SELECT count(*) AS n FROM products").get()).toEqual({ n: 50 });
+});
+
+test("updates an existing menu item price for the current business", async () => {
+  const { db, request } = setup();
+  const businessId = "123e4567-e89b-12d3-a456-426614174002";
+  await request("/api/business", { id: businessId, name: "Price Test" });
+  const productId = crypto.randomUUID();
+  await request("/api/products", { id: productId, name: "Pilau", priceMinor: 20000, unit: "plate" });
+  expect((await request(`/api/products/${productId}`, { priceMinor: 22500 }, "PATCH")).status).toBe(200);
+  expect(db.query("SELECT price_minor FROM products WHERE id = ?").get(productId)).toEqual({ price_minor: 22500 });
+  expect((await request(`/api/products/${productId}`, { priceMinor: -1 }, "PATCH")).status).toBe(400);
+  expect((await request(`/api/products/${crypto.randomUUID()}`, { priceMinor: 100 }, "PATCH")).status).toBe(404);
 });
