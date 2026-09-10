@@ -1,0 +1,31 @@
+{
+  "$schema": "./apps/app/node_modules/wrangler/config-schema.json",
+  "name": "qesuite-re",
+  "main": "./apps/app/dist/qesuite_re/index.js",
+  "compatibility_date": "2026-09-09",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": "./apps/app/dist/client",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+  "observability": {
+    "enabled": true,
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 1
+    },
+    "traces": {
+      "enabled": true,
+      "head_sampling_rate": 0.1
+    }
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "qesuite-re",
+      "database_id": "b49fe793-b546-427a-842c-aad7f12b00a4",
+      "migrations_dir": "./apps/app/migrations"
+    }
+  ]
+}

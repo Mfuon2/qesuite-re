@@ -13,7 +13,7 @@
     "build": "npm --workspace @qesuite/app run build",
     "ci:build": "bun test apps/app/tests && (cd apps/app && bunx tsc --noEmit) && bun run build && (cd apps/app && bunx wrangler deploy --dry-run)",
     "preview": "npm --workspace @qesuite/app run preview",
-    "deploy": "npm --workspace @qesuite/app run deploy",
+    "deploy": "bun run release",
     "release": "cd apps/app && bunx wrangler d1 migrations apply qesuite-re --remote --config wrangler.jsonc && bunx wrangler deploy",
     "deploy:check": "cd apps/app && bunx wrangler deploy --dry-run",
     "db:migrate:local": "cd apps/app && bunx wrangler d1 migrations apply qesuite-re --local",
