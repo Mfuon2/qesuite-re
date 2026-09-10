@@ -66,7 +66,9 @@ Start the entire frontend + Worker application:
 npm run dev
 ```
 
-There is only **one** dev command/process.
+The dev lifecycle applies any pending local D1 migrations before Vite starts,
+so a fresh checkout cannot fail with a missing `business_profile` table. There
+is only **one** dev command/process.
 
 ## Production D1
 
