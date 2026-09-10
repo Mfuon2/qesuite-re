@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#087449" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="QeSuite" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300&display=swap" rel="stylesheet" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
+    <link rel="apple-touch-icon-precomposed" sizes="180x180" href="/icons/apple-touch-icon.png" />
+    <style>
+      #boot-splash { position: fixed; z-index: 9999; inset: 0; display: grid; place-items: center; min-height: 100dvh; overflow: hidden; background: var(--surface, #fff); color: var(--ink, #101125); }
+      #boot-splash-content { display: flex; align-items: center; flex-direction: column; text-align: center; animation: boot-splash-arrive .62s cubic-bezier(.22, 1, .36, 1) both; }
+      #boot-splash img { display: block; width: clamp(78px, 23vw, 112px); height: auto; border-radius: 22%; }
+      #boot-splash strong { margin-top: 14px; font: 650 clamp(28px, 8vw, 42px)/1 "Nunito", ui-sans-serif, sans-serif; letter-spacing: -.045em; }
+      @keyframes boot-splash-arrive { from { opacity: 0; transform: scale(.92); } to { opacity: 1; transform: scale(1); } }
+      @media (prefers-reduced-motion: reduce) { #boot-splash-content { animation: none; } }
+    </style>
+    <title>QeSuite</title>
+  </head>
+  <body>
+    <div id="boot-splash" aria-hidden="true"><div id="boot-splash-content"><img src="/icons/icon-512.png" alt="" /><strong>QeSuite</strong></div></div>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
