@@ -306,7 +306,6 @@ export default function App() {
             {business && <BusinessProfileEditor business={business} onSave={updateProfile} />}
             <section className="settings-list">
               <button onClick={() => setTab("menu")}><span>Menu Items & Prices</span><Icon name="chevron" /></button>
-              <div className="business-details"><strong>{business?.name || "Business not configured"}</strong><p>{business?.tagline}</p></div>
               <button onClick={() => setTab("stock")}><span>Stock</span><Icon name="chevron" /></button>
               <button onClick={() => setTab("history")}><span>Reports</span><Icon name="chevron" /></button>
               <button onClick={() => void sync()}><span>Sync now</span><span className="muted">{!online ? "Offline" : syncing ? "Syncing…" : syncError ? "Retry connection" : pendingCount ? `${pendingCount} pending` : connected ? "Up to date" : "Not connected"}</span></button>
