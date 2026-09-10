@@ -32,6 +32,13 @@ export function todayRange(): DateRange {
   return { from: today, to: today };
 }
 
+export function daysBack(days: number): DateRange {
+  const to = todayNairobi();
+  const from = dateAtUtc(to);
+  from.setUTCDate(from.getUTCDate() - days);
+  return { from: dateKeyAtUtc(from), to };
+}
+
 export function nairobiHour(value: Date | string): number {
   const hour = new Intl.DateTimeFormat("en-GB", { timeZone: BUSINESS_TIME_ZONE, hour: "2-digit", hourCycle: "h23" })
     .formatToParts(new Date(value))

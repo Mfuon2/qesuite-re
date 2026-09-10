@@ -8,9 +8,9 @@ import { FinancialTrendChart } from "./components/FinancialTrendChart";
 import { MenuSettings } from "./components/MenuSettings";
 import { Icon } from "./components/Icon";
 import { prepareOffline } from "./lib/offline";
-import { getBusiness, getEvents, getProducts, initializeLocalData, pullDashboard, saveEvent, saveSetup, seedRestaurantMenu, syncPendingEvents, updateBusinessProfile } from "./lib/db";
+import { getBusiness, getEvents, getProducts, initializeLocalData, pullDashboard, saveEvent, saveSetup, seedRestaurantMenu, syncPendingEvents, updateBusinessProfile, updateProductPrice } from "./lib/db";
 import { calculateSummary, eventsForDateRange, foodSnapshot, formatMoney } from "./lib/metrics";
-import { formatDateRange, formatNairobiDate, nairobiHour, todayRange, type DateRange } from "./lib/nairobi";
+import { daysBack, formatDateRange, formatNairobiDate, nairobiHour, todayRange, type DateRange } from "./lib/nairobi";
 import { APP_VERSION } from "./version";
 import { CategoryAccordion } from "./components/CategoryAccordion";
 
@@ -87,7 +87,7 @@ export default function App() {
   const [syncError, setSyncError] = useState("");
   const [connected, setConnected] = useState(false);
   const [now, setNow] = useState(() => new Date());
-  const [dateRange, setDateRange] = useState<DateRange>(() => todayRange());
+  const [dateRange, setDateRange] = useState<DateRange>(() => daysBack(6));
   const [dateRangeOpen, setDateRangeOpen] = useState(false);
   const [recordsOpen, setRecordsOpen] = useState(false);
   const lastRecordedAt = useRef(0);
@@ -197,6 +197,13 @@ export default function App() {
     setSyncError("");
   }
 
+  async function updatePrice(productId: string, priceMinor: number) {
+    await updateProductPrice(productId, priceMinor);
+    await refresh();
+    setConnected(true);
+    setSyncError("");
+  }
+
   const greeting = nairobiHour(now) < 12 ? "Good morning" : nairobiHour(now) < 17 ? "Good afternoon" : "Good evening";
   const money = (value: number) => business ? formatMoney(value) : "—";
 
@@ -293,7 +300,7 @@ export default function App() {
 
         {tab === "stock" && <div className="page-content subpage">{backButton}<div className="page-title"><div><div className="eyebrow">Inventory</div><h2>Stock</h2></div><button className="text-button" onClick={() => setAction("stock_count")}>Count left</button></div>{food.length === 0 ? <p className="empty-state">No products have been added yet.</p> : <CategoryAccordion className="stock-categories" groups={food.reduce<Array<{ category: string; items: typeof food }>>((groups, row) => { const category = row.product.category || "Menu"; const group = groups.find((item) => item.category === category); if (group) group.items.push(row); else groups.push({ category, items: [row] }); return groups; }, [])} itemKey={(row) => row.product.id} renderItem={(row) => <div className="food-row"><strong>{row.product.name}</strong><div className="food-numbers"><span>{row.sold} sold</span><span>{row.left} left</span></div></div>} />}</div>}
 
-        {tab === "menu" && <div className="page-content subpage">{backButton}<MenuSettings products={products} hasBusiness={Boolean(business)} onSetup={setup} onSeed={seedMenu} /></div>}
+        {tab === "menu" && <div className="page-content subpage">{backButton}<MenuSettings products={products} hasBusiness={Boolean(business)} onSetup={setup} onSeed={seedMenu} onUpdatePrice={updatePrice} /></div>}
 
         {tab === "more" && (
           <div className="page-content subpage">
