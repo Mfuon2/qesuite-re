@@ -19,6 +19,11 @@ Cloudflare supplies the build's deployment credentials. No Cloudflare token is
 stored in GitHub. The Worker name in Cloudflare and `wrangler.jsonc` must both
 remain `qesuite-re`.
 
+The repository also includes a root `wrangler.jsonc` shim so Cloudflare's
+default `wrangler deploy` can resolve the built Worker when a connected trigger
+has not yet been updated. Keep the deploy command as `bun run release` so D1
+migrations always run before deployment.
+
 ## Release flow
 
 1. Open a pull request into `main`.

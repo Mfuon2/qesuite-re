@@ -248,6 +248,14 @@ export async function saveSetup(path: "/api/business" | "/api/products", data: u
   await pullDashboard();
 }
 
+export async function updateBusinessProfile(name: string, tagline = ""): Promise<void> {
+  if (!navigator.onLine) throw new Error("Connect to the internet to update your business profile.");
+  const response = await fetch("/api/business", { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ name, tagline }) });
+  const payload = await response.json().catch(() => ({})) as { error?: string };
+  if (!response.ok) throw new Error(payload.error || "Unable to update your business profile. Please retry.");
+  await pullDashboard();
+}
+
 export async function seedRestaurantMenu(): Promise<void> {
   if (!navigator.onLine) throw new Error("Connect to the internet to add the restaurant menu.");
   const response = await fetch("/api/products/seed", { method: "POST" });

@@ -8,10 +8,11 @@ import { FinancialTrendChart } from "./components/FinancialTrendChart";
 import { MenuSettings } from "./components/MenuSettings";
 import { Icon } from "./components/Icon";
 import { prepareOffline } from "./lib/offline";
-import { getBusiness, getEvents, getProducts, initializeLocalData, pullDashboard, saveEvent, saveSetup, seedRestaurantMenu, syncPendingEvents } from "./lib/db";
+import { getBusiness, getEvents, getProducts, initializeLocalData, pullDashboard, saveEvent, saveSetup, seedRestaurantMenu, syncPendingEvents, updateBusinessProfile } from "./lib/db";
 import { calculateSummary, eventsForDateRange, foodSnapshot, formatMoney } from "./lib/metrics";
 import { formatDateRange, formatNairobiDate, nairobiHour, todayRange, type DateRange } from "./lib/nairobi";
 import { APP_VERSION } from "./version";
+import { CategoryAccordion } from "./components/CategoryAccordion";
 
 type Tab = "home" | "history" | "more" | "stock" | "menu";
 type Action = "sale" | "stock_purchase" | "expense" | "top_up" | "withdrawal" | "production" | "stock_count";
@@ -189,6 +190,13 @@ export default function App() {
     setSyncError("");
   }
 
+  async function updateProfile(name: string, tagline: string) {
+    await updateBusinessProfile(name, tagline);
+    await refresh();
+    setConnected(true);
+    setSyncError("");
+  }
+
   const greeting = nairobiHour(now) < 12 ? "Good morning" : nairobiHour(now) < 17 ? "Good afternoon" : "Good evening";
   const money = (value: number) => business ? formatMoney(value) : "—";
 
@@ -283,7 +291,7 @@ export default function App() {
           </div>
         )}
 
-        {tab === "stock" && <div className="page-content subpage">{backButton}<div className="page-title"><h2>Stock</h2><button className="text-button" onClick={() => setAction("stock_count")}>Count left</button></div>{food.length === 0 ? <p className="empty-state">No products have been added yet.</p> : food.map((row) => <div className="food-row" key={row.product.id}><strong>{row.product.name}</strong><div className="food-numbers"><span>{row.sold} sold</span><span>{row.left} left</span></div></div>)}</div>}
+        {tab === "stock" && <div className="page-content subpage">{backButton}<div className="page-title"><div><div className="eyebrow">Inventory</div><h2>Stock</h2></div><button className="text-button" onClick={() => setAction("stock_count")}>Count left</button></div>{food.length === 0 ? <p className="empty-state">No products have been added yet.</p> : <CategoryAccordion className="stock-categories" groups={food.reduce<Array<{ category: string; items: typeof food }>>((groups, row) => { const category = row.product.category || "Menu"; const group = groups.find((item) => item.category === category); if (group) group.items.push(row); else groups.push({ category, items: [row] }); return groups; }, [])} itemKey={(row) => row.product.id} renderItem={(row) => <div className="food-row"><strong>{row.product.name}</strong><div className="food-numbers"><span>{row.sold} sold</span><span>{row.left} left</span></div></div>} />}</div>}
 
         {tab === "menu" && <div className="page-content subpage">{backButton}<MenuSettings products={products} hasBusiness={Boolean(business)} onSetup={setup} onSeed={seedMenu} /></div>}
 
@@ -295,9 +303,9 @@ export default function App() {
               <div><strong>Keep QeSuite on this phone</strong><p>Open it faster and keep recording even when the internet is unstable.</p></div>
               <button className="secondary-button" onClick={installApp}>Install app</button>
             </section>
+            {business && <BusinessProfileEditor business={business} onSave={updateProfile} />}
             <section className="settings-list">
               <button onClick={() => setTab("menu")}><span>Menu Items & Prices</span><Icon name="chevron" /></button>
-              <div className="business-details"><strong>{business?.name || "Business not configured"}</strong><p>{business?.tagline}</p></div>
               <button onClick={() => setTab("stock")}><span>Stock</span><Icon name="chevron" /></button>
               <button onClick={() => setTab("history")}><span>Reports</span><Icon name="chevron" /></button>
               <button onClick={() => void sync()}><span>Sync now</span><span className="muted">{!online ? "Offline" : syncing ? "Syncing…" : syncError ? "Retry connection" : pendingCount ? `${pendingCount} pending` : connected ? "Up to date" : "Not connected"}</span></button>
@@ -339,6 +347,32 @@ export default function App() {
       )}
     </div>
   );
+}
+
+function BusinessProfileEditor({ business, onSave }: { business: BusinessProfile; onSave: (name: string, tagline: string) => Promise<void> }) {
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(business.name);
+  const [tagline, setTagline] = useState(business.tagline || "");
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState("");
+
+  useEffect(() => { setName(business.name); setTagline(business.tagline || ""); }, [business.id, business.name, business.tagline]);
+
+  async function save(event: React.FormEvent) {
+    event.preventDefault();
+    if (!name.trim()) return;
+    setSaving(true);
+    setMessage("");
+    try { await onSave(name.trim(), tagline.trim()); setEditing(false); setMessage("Business profile updated."); }
+    catch (error) { setMessage(error instanceof Error ? error.message : "Unable to update profile."); }
+    finally { setSaving(false); }
+  }
+
+  return <section className="profile-card">
+    <div className="profile-card-heading"><div><div className="eyebrow">Business profile</div><h3>{business.name}</h3><p>{business.tagline || "Manage the name shown across QeSuite."}</p></div><button className="text-button" onClick={() => { setEditing((value) => !value); setMessage(""); }}>{editing ? "Cancel" : "Edit"}</button></div>
+    {editing && <form className="profile-editor" onSubmit={save}><label className="field-label" htmlFor="business-name">Restaurant name</label><input id="business-name" className="text-input" value={name} maxLength={120} onChange={(event) => setName(event.target.value)} /><label className="field-label" htmlFor="business-tagline">Tagline <span className="muted">(optional)</span></label><input id="business-tagline" className="text-input" value={tagline} maxLength={160} onChange={(event) => setTagline(event.target.value)} placeholder="A short description" /><div className="profile-editor-actions"><button type="submit" className="primary-button" disabled={!name.trim() || saving}>{saving ? "Saving…" : "Save changes"}</button></div></form>}
+    {message && <p className="menu-saved" role="status">{message}</p>}
+  </section>;
 }
 
 function NavButton({ label, icon, active, onClick }: { label: string; icon: Parameters<typeof Icon>[0]["name"]; active: boolean; onClick: () => void }) {
